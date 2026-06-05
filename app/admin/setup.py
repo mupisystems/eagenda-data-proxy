@@ -10,8 +10,8 @@ from app.models.proxy_token import ProxyToken
 
 
 class PIIPersonAdmin(ModelView, model=PIIPerson):
-    name = "Pessoa (PII)"
-    name_plural = "Pessoas (PII)"
+    name = "Person (PII)"
+    name_plural = "People (PII)"
     icon = "fa-solid fa-user"
     column_list = [
         PIIPerson.id, PIIPerson.external_id, PIIPerson.person_key,
@@ -24,8 +24,8 @@ class PIIPersonAdmin(ModelView, model=PIIPerson):
 
 
 class PIIQuestionnaireAdmin(ModelView, model=PIIQuestionnaireAnswer):
-    name = "Resposta PII"
-    name_plural = "Respostas PII"
+    name = "PII Answer"
+    name_plural = "PII Answers"
     icon = "fa-solid fa-file-lines"
     column_list = [
         PIIQuestionnaireAnswer.id, PIIQuestionnaireAnswer.appointment_key,
@@ -38,8 +38,8 @@ class PIIQuestionnaireAdmin(ModelView, model=PIIQuestionnaireAnswer):
 
 
 class AuditLogAdmin(ModelView, model=AuditLog):
-    name = "Log de Auditoria"
-    name_plural = "Logs de Auditoria"
+    name = "Audit Log"
+    name_plural = "Audit Logs"
     icon = "fa-solid fa-clipboard-list"
     column_list = [
         AuditLog.id, AuditLog.timestamp, AuditLog.action,
@@ -53,8 +53,8 @@ class AuditLogAdmin(ModelView, model=AuditLog):
 
 
 class NotificationLogAdmin(ModelView, model=NotificationLog):
-    name = "Log de Notificacao"
-    name_plural = "Logs de Notificacao"
+    name = "Notification Log"
+    name_plural = "Notification Logs"
     icon = "fa-solid fa-envelope"
     column_list = [
         NotificationLog.id, NotificationLog.external_id,

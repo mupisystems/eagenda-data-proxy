@@ -21,7 +21,7 @@ def get_forwarder(request: Request, settings: Settings = Depends(get_settings)) 
     """Get the cloud forwarder using the shared httpx client."""
     return CloudForwarder(
         client=request.app.state.http_client,
-        base_url=settings.eagendas_base_url,
+        base_url=settings.eagendas_url,
         token=settings.eagendas_api_token,
     )
 

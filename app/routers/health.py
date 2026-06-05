@@ -23,7 +23,7 @@ async def health_check(request: Request):
         from app.config import get_settings
         settings = get_settings()
         response = await request.app.state.http_client.get(
-            f"{settings.eagendas_base_url}/schema/",
+            f"{settings.eagendas_url}/schema/",
             headers={"Authorization": f"Bearer {settings.eagendas_api_token}"},
             timeout=5.0,
         )

@@ -2,6 +2,12 @@
 # Environment variables can be referenced with ${VAR_NAME} syntax
 
 eagendas:
+  # Region determines the datacenter: BR (Brazil) or US (United States)
+  # BR      → https://eagenda.com.br/api/v3
+  # US      → https://eagendas.com/api/v3
+  # HOMOLOG → https://homolog.eagendas.com/api/v3
+  region: "${EAGENDAS_REGION}"
+  # Override base_url to use a custom endpoint (takes precedence over region)
   base_url: "${EAGENDAS_API_URL}"
   api_token: "${EAGENDAS_API_TOKEN}"
   timeout: 30
@@ -51,8 +57,16 @@ notifications:
     from_name: "${SMTP_FROM_NAME}"
   sms:
     enabled: false
+    provider: "${SMS_PROVIDER}"       # twilio, vonage
+    api_key: "${SMS_API_KEY}"
+    api_secret: "${SMS_API_SECRET}"
+    from_number: "${SMS_FROM_NUMBER}"
   whatsapp:
     enabled: false
+    provider: "${WHATSAPP_PROVIDER}"  # evolution, meta
+    api_url: "${WHATSAPP_API_URL}"
+    api_key: "${WHATSAPP_API_KEY}"
+    from_number: "${WHATSAPP_FROM_NUMBER}"
 
 webhook_relay:
   target_url: "${WEBHOOK_RELAY_TARGET}"

@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     app.state.engine = create_engine(settings.database_url)
     app.state.session_factory = create_session_factory(app.state.engine)
 
-    logger.info("eagendas Data Proxy started — cloud: %s", settings.eagendas_base_url)
+    logger.info("eagendas Data Proxy started — region: %s, cloud: %s", settings.eagendas_region, settings.eagendas_url)
 
     yield
 

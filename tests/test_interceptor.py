@@ -7,7 +7,7 @@ from app.config import Settings
 
 @pytest.fixture
 def interceptor():
-    settings = Settings(pii_pseudonym_prefix="Cidadao", pii_redacted_placeholder="[REDACTED]")
+    settings = Settings(pii_pseudonym_prefix="Citizen", pii_redacted_placeholder="[REDACTED]")
     return PIIInterceptor(settings=settings, pii_store=PIIStore())
 
 
@@ -29,7 +29,7 @@ class TestInterceptPerson:
         body = {"name": "Maria Santos", "external_id": "EXT-001"}
         cleaned, _ = await interceptor.intercept_person(body, db_session)
 
-        assert cleaned["name"] == "Cidadao-EXT-001"
+        assert cleaned["name"] == "Citizen-EXT-001"
 
     async def test_stores_pii_locally(self, interceptor, db_session):
         body = {
@@ -46,7 +46,7 @@ class TestInterceptPerson:
         assert pii.external_id == "EXT-002"
 
     async def test_generates_external_id_if_missing(self, interceptor, db_session):
-        body = {"name": "Joao Silva"}
+        body = {"name": "John Smith"}
         cleaned, pii = await interceptor.intercept_person(body, db_session)
 
         assert cleaned["external_id"] is not None

@@ -25,7 +25,7 @@ async def seed_pii(db_session):
 
 class TestEnrichPerson:
     async def test_enriches_with_real_name(self, enricher, db_session, seed_pii):
-        cloud_data = {"person_key": "uuid-1", "name": "Cidadao-EXT-100", "external_id": "EXT-100"}
+        cloud_data = {"person_key": "uuid-1", "name": "Citizen-EXT-100", "external_id": "EXT-100"}
         enriched = await enricher.enrich_person(cloud_data, db_session)
 
         assert enriched["name"] == "Maria Santos"
@@ -33,10 +33,10 @@ class TestEnrichPerson:
         assert enriched["phone"] == "+5511999990000"
 
     async def test_returns_unchanged_if_no_pii(self, enricher, db_session):
-        cloud_data = {"person_key": "uuid-1", "name": "Cidadao-UNKNOWN", "external_id": "UNKNOWN"}
+        cloud_data = {"person_key": "uuid-1", "name": "Citizen-UNKNOWN", "external_id": "UNKNOWN"}
         enriched = await enricher.enrich_person(cloud_data, db_session)
 
-        assert enriched["name"] == "Cidadao-UNKNOWN"
+        assert enriched["name"] == "Citizen-UNKNOWN"
         assert "email" not in enriched
 
     async def test_returns_unchanged_if_no_external_id(self, enricher, db_session):
@@ -51,7 +51,7 @@ class TestEnrichAppointment:
         cloud_data = {
             "appointment_key": "appt-1",
             "attendees": [
-                {"person_key": "uuid-1", "name": "Cidadao-EXT-100", "external_id": "EXT-100"},
+                {"person_key": "uuid-1", "name": "Citizen-EXT-100", "external_id": "EXT-100"},
             ],
         }
         enriched = await enricher.enrich_appointment(cloud_data, db_session)
@@ -70,7 +70,7 @@ class TestEnrichPaginated:
         cloud_data = {
             "count": 1,
             "results": [
-                {"person_key": "uuid-1", "name": "Cidadao-EXT-100", "external_id": "EXT-100"},
+                {"person_key": "uuid-1", "name": "Citizen-EXT-100", "external_id": "EXT-100"},
             ],
         }
         enriched = await enricher.enrich_paginated(cloud_data, "person", db_session)

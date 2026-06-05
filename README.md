@@ -1,5 +1,8 @@
 # eagendas Data Proxy
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-red)](https://github.com/sponsors/mupisystems)
+
 On-premise PII proxy for eagendas API v3. Keeps personal data (name, email, phone, CPF) on the client's servers while using eagendas cloud for scheduling.
 
 ## Architecture
@@ -12,7 +15,7 @@ Client Systems → Data Proxy (on-premise) → eagendas Cloud
 ```
 
 - **Intercept**: PII is stripped from outbound requests and stored locally
-- **Pseudonymize**: Names become `Cidadao-{external_id}` in the cloud
+- **Pseudonymize**: Names become `Citizen-{external_id}` in the cloud (configurable prefix)
 - **Enrich**: Cloud responses are merged with local PII before returning to client
 - **Notify**: Email/SMS sent using real contact data from local store
 
@@ -75,6 +78,26 @@ pip install -e ".[dev]"
 pytest
 ```
 
+## Datacenter Regions
+
+Configure which eagendas datacenter to use:
+
+| Region | Base URL | Description |
+|--------|----------|-------------|
+| `BR` | `https://eagenda.com.br/api/v3` | Brazil (default) |
+| `US` | `https://eagendas.com/api/v3` | United States |
+| `HOMOLOG` | `https://homolog.eagendas.com/api/v3` | Staging / QA |
+
+Set in `.env`:
+```bash
+EAGENDAS_REGION=BR
+```
+
+Or override with a custom URL:
+```bash
+EAGENDAS_API_URL=https://custom.eagendas.example.com/api/v3
+```
+
 ## Tech Stack
 
 - FastAPI + uvicorn
@@ -82,3 +105,17 @@ pytest
 - Celery + Redis
 - SQLAdmin
 - Docker Compose
+
+## License
+
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+### Commercial Use
+
+If you need a commercial license without AGPL obligations, or want priority support and managed hosting, contact us or become a [sponsor](https://github.com/sponsors/mupisystems).
+
+| Tier | Includes |
+|------|----------|
+| Community | AGPL-3.0, community support |
+| Sponsor | Priority issues, private support channel |
+| Enterprise | Commercial license, SLA, managed deployment |

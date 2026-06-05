@@ -17,7 +17,7 @@ def make_person_body(**overrides) -> dict:
 def make_cloud_person_response(**overrides) -> dict:
     defaults = {
         "person_key": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        "name": "Cidadao-EXT-001",
+        "name": "Citizen-EXT-001",
         "external_id": "EXT-001",
     }
     defaults.update(overrides)
@@ -32,7 +32,7 @@ def make_appointment_response(**overrides) -> dict:
         "attendees": [
             {
                 "person_key": "a1b2c3d4",
-                "name": "Cidadao-EXT-001",
+                "name": "Citizen-EXT-001",
                 "external_id": "EXT-001",
             }
         ],

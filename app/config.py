@@ -26,13 +26,28 @@ def _load_yaml_config(path: str = "data_proxy_config.yml") -> dict:
     return yaml.safe_load(resolved) or {}
 
 
+REGION_URLS = {
+    "BR": "https://eagenda.com.br/api/v3",
+    "US": "https://eagendas.com/api/v3",
+    "HOMOLOG": "https://homolog.eagendas.com/api/v3",
+}
+
+
 class Settings(BaseSettings):
     # eagendas cloud
-    eagendas_base_url: str = "https://app.eagendas.com.br/api/v3"
+    eagendas_region: str = "BR"
+    eagendas_base_url: str = ""
     eagendas_api_token: str = ""
     eagendas_timeout: int = 30
     eagendas_retry_attempts: int = 3
     eagendas_retry_backoff: float = 2.0
+
+    @property
+    def eagendas_url(self) -> str:
+        """Resolve the effective API URL: explicit base_url takes precedence over region."""
+        if self.eagendas_base_url:
+            return self.eagendas_base_url
+        return REGION_URLS.get(self.eagendas_region.upper(), REGION_URLS["BR"])
 
     # Database
     database_url: str = "postgresql+asyncpg://proxy:proxy@localhost:5432/eagendas_pii"
@@ -42,7 +57,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # PII
-    pii_pseudonym_prefix: str = "Cidadao"
+    pii_pseudonym_prefix: str = "Citizen"
     pii_redacted_placeholder: str = "[REDACTED]"
     pii_questionnaire_pii_types: list[str] = Field(default_factory=lambda: ["text", "short-text", "paragraph"])
 
@@ -53,7 +68,21 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from_address: str = ""
-    smtp_from_name: str = "Sistema de Agendamento"
+    smtp_from_name: str = "Scheduling System"
+
+    # SMS
+    sms_enabled: bool = False
+    sms_provider: str = ""  # twilio, vonage, etc.
+    sms_api_key: str = ""
+    sms_api_secret: str = ""
+    sms_from_number: str = ""
+
+    # WhatsApp
+    whatsapp_enabled: bool = False
+    whatsapp_provider: str = ""  # evolution, twilio, meta, etc.
+    whatsapp_api_url: str = ""
+    whatsapp_api_key: str = ""
+    whatsapp_from_number: str = ""
 
     # Webhook relay
     webhook_relay_target_url: str = ""
@@ -80,6 +109,8 @@ class Settings(BaseSettings):
 
         # Flatten nested YAML into Settings field names
         eagendas = cfg.get("eagendas", {})
+        if eagendas.get("region"):
+            flat["eagendas_region"] = eagendas["region"]
         flat["eagendas_base_url"] = eagendas.get("base_url", "")
         flat["eagendas_api_token"] = eagendas.get("api_token", "")
         flat["eagendas_timeout"] = eagendas.get("timeout", 30)
@@ -95,7 +126,7 @@ class Settings(BaseSettings):
         flat["redis_url"] = cfg.get("redis", {}).get("url", "")
 
         pii = cfg.get("pii", {})
-        flat["pii_pseudonym_prefix"] = pii.get("pseudonym_prefix", "Cidadao")
+        flat["pii_pseudonym_prefix"] = pii.get("pseudonym_prefix", "Citizen")
         questionnaire = pii.get("questionnaire", {})
         if questionnaire.get("pii_types"):
             flat["pii_questionnaire_pii_types"] = questionnaire["pii_types"]
@@ -110,7 +141,21 @@ class Settings(BaseSettings):
         flat["smtp_user"] = email.get("smtp_user", "")
         flat["smtp_password"] = email.get("smtp_password", "")
         flat["smtp_from_address"] = email.get("from_address", "")
-        flat["smtp_from_name"] = email.get("from_name", "Sistema de Agendamento")
+        flat["smtp_from_name"] = email.get("from_name", "Scheduling System")
+
+        sms = notif.get("sms", {})
+        flat["sms_enabled"] = sms.get("enabled", False)
+        flat["sms_provider"] = sms.get("provider", "")
+        flat["sms_api_key"] = sms.get("api_key", "")
+        flat["sms_api_secret"] = sms.get("api_secret", "")
+        flat["sms_from_number"] = sms.get("from_number", "")
+
+        wa = notif.get("whatsapp", {})
+        flat["whatsapp_enabled"] = wa.get("enabled", False)
+        flat["whatsapp_provider"] = wa.get("provider", "")
+        flat["whatsapp_api_url"] = wa.get("api_url", "")
+        flat["whatsapp_api_key"] = wa.get("api_key", "")
+        flat["whatsapp_from_number"] = wa.get("from_number", "")
 
         wh = cfg.get("webhook_relay", {})
         flat["webhook_relay_target_url"] = wh.get("target_url", "")

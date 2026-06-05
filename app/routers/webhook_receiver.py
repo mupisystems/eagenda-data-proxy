@@ -38,7 +38,7 @@ async def receive_webhook(
     except Exception:
         logger.exception("Failed to dispatch webhook relay task")
 
-    if event in ("CREATED", "UPDATED") and resource_type == "appointment":
+    if event in ("CREATED", "UPDATED", "CANCELED", "DELETED") and resource_type == "appointment":
         try:
             from app.tasks.notifications import send_appointment_notification
             send_appointment_notification.delay(enriched)
