@@ -1,4 +1,5 @@
 """SQLAdmin configuration for the Data Proxy admin panel."""
+
 from fastapi import FastAPI
 from sqladmin import Admin, ModelView
 
@@ -16,9 +17,14 @@ class PIIPersonAdmin(ModelView, model=PIIPerson):
     name_plural = "People (PII)"
     icon = "fa-solid fa-user"
     column_list = [
-        PIIPerson.id, PIIPerson.external_id, PIIPerson.person_key,
-        PIIPerson.name, PIIPerson.email, PIIPerson.phone,
-        PIIPerson.is_active, PIIPerson.created_at,
+        PIIPerson.id,
+        PIIPerson.external_id,
+        PIIPerson.person_key,
+        PIIPerson.name,
+        PIIPerson.email,
+        PIIPerson.phone,
+        PIIPerson.is_active,
+        PIIPerson.created_at,
     ]
     column_searchable_list = [PIIPerson.name, PIIPerson.email, PIIPerson.external_id]
     column_sortable_list = [PIIPerson.id, PIIPerson.created_at, PIIPerson.name]
@@ -30,8 +36,10 @@ class PIIQuestionnaireAdmin(ModelView, model=PIIQuestionnaireAnswer):
     name_plural = "PII Answers"
     icon = "fa-solid fa-file-lines"
     column_list = [
-        PIIQuestionnaireAnswer.id, PIIQuestionnaireAnswer.appointment_key,
-        PIIQuestionnaireAnswer.question_key, PIIQuestionnaireAnswer.question_text,
+        PIIQuestionnaireAnswer.id,
+        PIIQuestionnaireAnswer.appointment_key,
+        PIIQuestionnaireAnswer.question_key,
+        PIIQuestionnaireAnswer.question_text,
         PIIQuestionnaireAnswer.created_at,
     ]
     can_create = False
@@ -44,9 +52,13 @@ class AuditLogAdmin(ModelView, model=AuditLog):
     name_plural = "Audit Logs"
     icon = "fa-solid fa-clipboard-list"
     column_list = [
-        AuditLog.id, AuditLog.timestamp, AuditLog.action,
-        AuditLog.resource_type, AuditLog.external_id,
-        AuditLog.client_ip, AuditLog.request_method,
+        AuditLog.id,
+        AuditLog.timestamp,
+        AuditLog.action,
+        AuditLog.resource_type,
+        AuditLog.external_id,
+        AuditLog.client_ip,
+        AuditLog.request_method,
     ]
     column_sortable_list = [AuditLog.id, AuditLog.timestamp]
     can_create = False
@@ -59,9 +71,12 @@ class NotificationLogAdmin(ModelView, model=NotificationLog):
     name_plural = "Notification Logs"
     icon = "fa-solid fa-envelope"
     column_list = [
-        NotificationLog.id, NotificationLog.external_id,
-        NotificationLog.channel, NotificationLog.recipient,
-        NotificationLog.status, NotificationLog.created_at,
+        NotificationLog.id,
+        NotificationLog.external_id,
+        NotificationLog.channel,
+        NotificationLog.recipient,
+        NotificationLog.status,
+        NotificationLog.created_at,
     ]
     column_sortable_list = [NotificationLog.id, NotificationLog.created_at]
     can_create = False
@@ -74,8 +89,12 @@ class ProxyTokenAdmin(ModelView, model=ProxyToken):
     name_plural = "Tokens"
     icon = "fa-solid fa-key"
     column_list = [
-        ProxyToken.id, ProxyToken.label, ProxyToken.is_active,
-        ProxyToken.created_at, ProxyToken.expires_at, ProxyToken.last_used_at,
+        ProxyToken.id,
+        ProxyToken.label,
+        ProxyToken.is_active,
+        ProxyToken.created_at,
+        ProxyToken.expires_at,
+        ProxyToken.last_used_at,
     ]
     form_excluded_columns = [ProxyToken.token_hash, ProxyToken.last_used_at]
 
@@ -85,13 +104,21 @@ class LocalAppointmentAdmin(ModelView, model=LocalAppointment):
     name_plural = "Local Appointments"
     icon = "fa-solid fa-calendar-check"
     column_list = [
-        LocalAppointment.id, LocalAppointment.appointment_key,
-        LocalAppointment.external_id, LocalAppointment.service_key,
-        LocalAppointment.scheduled_at, LocalAppointment.status,
+        LocalAppointment.id,
+        LocalAppointment.appointment_key,
+        LocalAppointment.external_id,
+        LocalAppointment.service_key,
+        LocalAppointment.scheduled_at,
+        LocalAppointment.status,
         LocalAppointment.updated_at,
     ]
     column_searchable_list = [LocalAppointment.appointment_key, LocalAppointment.external_id]
-    column_sortable_list = [LocalAppointment.id, LocalAppointment.scheduled_at, LocalAppointment.status, LocalAppointment.updated_at]
+    column_sortable_list = [
+        LocalAppointment.id,
+        LocalAppointment.scheduled_at,
+        LocalAppointment.status,
+        LocalAppointment.updated_at,
+    ]
 
 
 class LocalCustomDataAdmin(ModelView, model=LocalCustomData):
@@ -99,8 +126,10 @@ class LocalCustomDataAdmin(ModelView, model=LocalCustomData):
     name_plural = "Custom Data"
     icon = "fa-solid fa-database"
     column_list = [
-        LocalCustomData.id, LocalCustomData.entity_type,
-        LocalCustomData.entity_key, LocalCustomData.created_at,
+        LocalCustomData.id,
+        LocalCustomData.entity_type,
+        LocalCustomData.entity_key,
+        LocalCustomData.created_at,
         LocalCustomData.updated_at,
     ]
     column_searchable_list = [LocalCustomData.entity_key]

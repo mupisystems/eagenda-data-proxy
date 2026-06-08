@@ -1,4 +1,5 @@
 """Availability proxy routers — pass-through (no PII)."""
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 

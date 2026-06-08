@@ -1,4 +1,5 @@
 """httpx AsyncClient lifecycle — created in app lifespan, injected via dependencies."""
+
 import httpx
 
 

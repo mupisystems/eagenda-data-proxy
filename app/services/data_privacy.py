@@ -1,4 +1,5 @@
 """Data privacy service — right to erasure, data export, and PII purge."""
+
 import logging
 from datetime import date, datetime, timezone
 from typing import Optional
@@ -43,9 +44,7 @@ class DataPrivacyService:
         }
 
         # 1. Find the person
-        result = await db.execute(
-            select(PIIPerson).where(PIIPerson.external_id == external_id)
-        )
+        result = await db.execute(select(PIIPerson).where(PIIPerson.external_id == external_id))
         person = result.scalar_one_or_none()
         if not person:
             return summary
@@ -54,18 +53,18 @@ class DataPrivacyService:
 
         # 2. Get appointment keys from local_appointment (more reliable than audit logs)
         appt_result = await db.execute(
-            select(LocalAppointment.appointment_key).where(
-                LocalAppointment.external_id == external_id
-            )
+            select(LocalAppointment.appointment_key).where(LocalAppointment.external_id == external_id)
         )
         appointment_keys = [r[0] for r in appt_result.all()]
 
         # Also check audit logs for any appointments not tracked locally
         audit_result = await db.execute(
-            select(AuditLog.resource_id).where(
+            select(AuditLog.resource_id)
+            .where(
                 AuditLog.external_id == external_id,
                 AuditLog.resource_type == "appointment",
-            ).distinct()
+            )
+            .distinct()
         )
         audit_keys = [r[0] for r in audit_result.all() if r[0]]
         all_appointment_keys = list(set(appointment_keys + audit_keys))
@@ -73,16 +72,12 @@ class DataPrivacyService:
         # 3. Delete questionnaire answers linked to appointments
         if all_appointment_keys:
             qa_result = await db.execute(
-                delete(PIIQuestionnaireAnswer).where(
-                    PIIQuestionnaireAnswer.appointment_key.in_(all_appointment_keys)
-                )
+                delete(PIIQuestionnaireAnswer).where(PIIQuestionnaireAnswer.appointment_key.in_(all_appointment_keys))
             )
             summary["questionnaire_answers_deleted"] = qa_result.rowcount
 
         # 4. Delete local appointment records
-        la_result = await db.execute(
-            delete(LocalAppointment).where(LocalAppointment.external_id == external_id)
-        )
+        la_result = await db.execute(delete(LocalAppointment).where(LocalAppointment.external_id == external_id))
         summary["appointments_deleted"] = la_result.rowcount
 
         # 5. Delete custom data (person-level + appointment-level)
@@ -148,9 +143,7 @@ class DataPrivacyService:
         Returns a structured dict with all PII, questionnaire answers,
         local appointments, custom data, and audit history.
         """
-        result = await db.execute(
-            select(PIIPerson).where(PIIPerson.external_id == external_id)
-        )
+        result = await db.execute(select(PIIPerson).where(PIIPerson.external_id == external_id))
         person = result.scalar_one_or_none()
         if not person:
             return None
@@ -178,27 +171,31 @@ class DataPrivacyService:
 
         # Local appointments
         appt_result = await db.execute(
-            select(LocalAppointment).where(
-                LocalAppointment.external_id == external_id
-            ).order_by(LocalAppointment.scheduled_at.desc())
+            select(LocalAppointment)
+            .where(LocalAppointment.external_id == external_id)
+            .order_by(LocalAppointment.scheduled_at.desc())
         )
         appointment_keys = []
         for appt in appt_result.scalars().all():
             appointment_keys.append(appt.appointment_key)
-            export["appointments"].append({
-                "appointment_key": appt.appointment_key,
-                "service_key": appt.service_key,
-                "scheduled_at": appt.scheduled_at.isoformat() if appt.scheduled_at else None,
-                "status": appt.status,
-                "created_at": appt.created_at.isoformat() if appt.created_at else None,
-            })
+            export["appointments"].append(
+                {
+                    "appointment_key": appt.appointment_key,
+                    "service_key": appt.service_key,
+                    "scheduled_at": appt.scheduled_at.isoformat() if appt.scheduled_at else None,
+                    "status": appt.status,
+                    "created_at": appt.created_at.isoformat() if appt.created_at else None,
+                }
+            )
 
         # Also check audit logs for appointments not tracked locally
         audit_result = await db.execute(
-            select(AuditLog.resource_id).where(
+            select(AuditLog.resource_id)
+            .where(
                 AuditLog.external_id == external_id,
                 AuditLog.resource_type == "appointment",
-            ).distinct()
+            )
+            .distinct()
         )
         audit_keys = [r[0] for r in audit_result.all() if r[0]]
         all_appointment_keys = list(set(appointment_keys + audit_keys))
@@ -206,18 +203,18 @@ class DataPrivacyService:
         # Questionnaire answers
         if all_appointment_keys:
             qa_result = await db.execute(
-                select(PIIQuestionnaireAnswer).where(
-                    PIIQuestionnaireAnswer.appointment_key.in_(all_appointment_keys)
-                )
+                select(PIIQuestionnaireAnswer).where(PIIQuestionnaireAnswer.appointment_key.in_(all_appointment_keys))
             )
             for qa in qa_result.scalars().all():
-                export["questionnaire_answers"].append({
-                    "appointment_key": qa.appointment_key,
-                    "question_key": qa.question_key,
-                    "question_text": qa.question_text,
-                    "answer_body": qa.answer_body,
-                    "created_at": qa.created_at.isoformat() if qa.created_at else None,
-                })
+                export["questionnaire_answers"].append(
+                    {
+                        "appointment_key": qa.appointment_key,
+                        "question_key": qa.question_key,
+                        "question_text": qa.question_text,
+                        "answer_body": qa.answer_body,
+                        "created_at": qa.created_at.isoformat() if qa.created_at else None,
+                    }
+                )
 
         # Custom data (person-level)
         cd_person = await db.execute(
@@ -243,20 +240,20 @@ class DataPrivacyService:
 
         # Audit history (actions performed on this person's data)
         audit_entries = await db.execute(
-            select(AuditLog).where(
-                AuditLog.external_id == external_id
-            ).order_by(AuditLog.timestamp.desc())
+            select(AuditLog).where(AuditLog.external_id == external_id).order_by(AuditLog.timestamp.desc())
         )
         for entry in audit_entries.scalars().all():
-            export["audit_history"].append({
-                "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
-                "action": entry.action,
-                "resource_type": entry.resource_type,
-                "resource_id": entry.resource_id,
-                "request_method": entry.request_method,
-                "request_path": entry.request_path,
-                "pii_fields_accessed": entry.pii_fields_accessed,
-            })
+            export["audit_history"].append(
+                {
+                    "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+                    "action": entry.action,
+                    "resource_type": entry.resource_type,
+                    "resource_id": entry.resource_id,
+                    "request_method": entry.request_method,
+                    "request_path": entry.request_path,
+                    "pii_fields_accessed": entry.pii_fields_accessed,
+                }
+            )
 
         # Audit the export itself
         audit_entry = AuditLog(

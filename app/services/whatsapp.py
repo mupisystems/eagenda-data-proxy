@@ -7,6 +7,7 @@ Configure in .env:
     WHATSAPP_API_KEY=...
     WHATSAPP_FROM_NUMBER=+5511999999999
 """
+
 import logging
 
 from app.config import get_settings
@@ -36,6 +37,7 @@ async def _send_evolution(to: str, body: str, settings) -> bool:
     """Send WhatsApp via Evolution API."""
     try:
         import httpx
+
         base_url = settings.whatsapp_api_url.rstrip("/")
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -57,6 +59,7 @@ async def _send_meta(to: str, body: str, settings) -> bool:
     """Send WhatsApp via Meta Cloud API."""
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"https://graph.facebook.com/v21.0/{settings.whatsapp_from_number}/messages",

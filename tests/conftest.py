@@ -28,6 +28,7 @@ async def db_session(engine):
 async def proxy_token(db_session):
     """Create a valid proxy token for tests."""
     from app.models.proxy_token import ProxyToken
+
     raw_token = "test-token-123"
     token = ProxyToken(
         token_hash=hashlib.sha256(raw_token.encode()).hexdigest(),

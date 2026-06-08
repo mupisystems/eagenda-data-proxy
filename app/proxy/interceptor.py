@@ -1,4 +1,5 @@
 """PII interception — strips PII from outbound payloads, stores locally."""
+
 import logging
 from copy import deepcopy
 
@@ -45,9 +46,7 @@ class PIIInterceptor:
                 cleaned[key] = value
         return cleaned
 
-    async def intercept_person(
-        self, body: dict, db: AsyncSession
-    ) -> tuple[dict, PIIPerson]:
+    async def intercept_person(self, body: dict, db: AsyncSession) -> tuple[dict, PIIPerson]:
         """
         Intercept a person creation/update payload.
         Returns (cleaned_body_for_cloud, pii_person_record).
@@ -55,22 +54,19 @@ class PIIInterceptor:
         external_id = body.get("external_id")
         if not external_id:
             import uuid
+
             external_id = str(uuid.uuid4())
             body["external_id"] = external_id
 
         # Extract and store PII locally
         pii_data = self._extract_pii(body)
-        pii_record = await self.pii_store.upsert_person(
-            db, external_id=external_id, **pii_data
-        )
+        pii_record = await self.pii_store.upsert_person(db, external_id=external_id, **pii_data)
 
         # Build cleaned payload for cloud
         cleaned = self._strip_pii(body, external_id)
         return cleaned, pii_record
 
-    async def intercept_appointment(
-        self, body: dict, db: AsyncSession
-    ) -> dict:
+    async def intercept_appointment(self, body: dict, db: AsyncSession) -> dict:
         """
         Intercept an appointment creation payload.
         Processes attendees (person PII) and questionnaire answers (text PII).
@@ -93,9 +89,7 @@ class PIIInterceptor:
 
         return cleaned
 
-    async def _intercept_answers(
-        self, answers: list[dict], db: AsyncSession
-    ) -> list[dict]:
+    async def _intercept_answers(self, answers: list[dict], db: AsyncSession) -> list[dict]:
         """Strip PII from text-type questionnaire answers."""
         cleaned_answers = []
         for answer in answers:

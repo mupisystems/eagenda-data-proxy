@@ -1,7 +1,6 @@
 """Tests for Bearer token authentication."""
 
 
-
 class TestAuth:
     async def test_valid_token_grants_access(self, client):
         # client fixture already has a valid token in headers

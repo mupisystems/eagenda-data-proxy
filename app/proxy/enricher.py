@@ -1,4 +1,5 @@
 """Response enrichment — merges local PII into cloud responses."""
+
 import logging
 from copy import deepcopy
 
@@ -83,9 +84,7 @@ class PIIEnricher:
 
         return enriched
 
-    async def enrich_paginated(
-        self, data: dict, resource_type: str, db: AsyncSession
-    ) -> dict:
+    async def enrich_paginated(self, data: dict, resource_type: str, db: AsyncSession) -> dict:
         """Enrich all items in a paginated response."""
         enriched = dict(data)
         results = enriched.get("results", [])
@@ -93,13 +92,9 @@ class PIIEnricher:
         if resource_type == "person":
             external_ids = [r.get("external_id") for r in results if r.get("external_id")]
             pii_map = await self.pii_store.get_persons_batch(db, external_ids)
-            enriched["results"] = [
-                self._merge_person_pii(r, pii_map) for r in results
-            ]
+            enriched["results"] = [self._merge_person_pii(r, pii_map) for r in results]
         elif resource_type == "appointment":
-            enriched["results"] = [
-                await self.enrich_appointment(r, db) for r in results
-            ]
+            enriched["results"] = [await self.enrich_appointment(r, db) for r in results]
 
         return enriched
 

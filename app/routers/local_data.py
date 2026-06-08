@@ -1,4 +1,5 @@
 """Local custom data router — direct CRUD for custom fields stored locally."""
+
 from fastapi import APIRouter, Body, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,9 +8,7 @@ from app.auth.bearer import verify_proxy_token
 from app.dependencies import get_custom_data_store, get_db
 from app.services.custom_data_store import CustomDataStore
 
-router = APIRouter(
-    prefix="/api/v3/local-data", tags=["Local Data"], dependencies=[Depends(verify_proxy_token)]
-)
+router = APIRouter(prefix="/api/v3/local-data", tags=["Local Data"], dependencies=[Depends(verify_proxy_token)])
 
 
 @router.get("/person/{external_id}/")

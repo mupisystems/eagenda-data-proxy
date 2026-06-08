@@ -1,4 +1,5 @@
 """Tests for PII enricher."""
+
 import pytest
 from app.proxy.enricher import PIIEnricher
 from app.services.pii_store import PIIStore

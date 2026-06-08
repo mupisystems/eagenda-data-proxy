@@ -7,6 +7,7 @@ Configure in .env:
     SMS_API_SECRET=...
     SMS_FROM_NUMBER=+1234567890
 """
+
 import logging
 
 from app.config import get_settings
@@ -36,6 +37,7 @@ async def _send_twilio(to: str, body: str, settings) -> bool:
     """Send SMS via Twilio REST API."""
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"https://api.twilio.com/2010-04-01/Accounts/{settings.sms_api_key}/Messages.json",
@@ -56,6 +58,7 @@ async def _send_vonage(to: str, body: str, settings) -> bool:
     """Send SMS via Vonage (Nexmo) REST API."""
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://rest.nexmo.com/sms/json",

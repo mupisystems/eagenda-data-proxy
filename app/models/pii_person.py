@@ -26,7 +26,9 @@ class PIIPerson(Base):
     # Metadata
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
     purge_after: Mapped[Optional[date]] = mapped_column(Date)
 
     def __repr__(self) -> str:

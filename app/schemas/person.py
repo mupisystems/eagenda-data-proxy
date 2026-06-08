@@ -3,6 +3,7 @@ from pydantic import BaseModel, EmailStr
 
 class PersonCreate(BaseModel):
     """Person creation payload from client."""
+
     name: str
     email: EmailStr | None = None
     phone: str | None = None
@@ -13,6 +14,7 @@ class PersonCreate(BaseModel):
 
 class PersonUpdate(BaseModel):
     """Person update payload from client."""
+
     name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None

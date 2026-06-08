@@ -1,4 +1,5 @@
 """Tests for PII interceptor."""
+
 import pytest
 from app.proxy.interceptor import PIIInterceptor
 from app.services.pii_store import PIIStore

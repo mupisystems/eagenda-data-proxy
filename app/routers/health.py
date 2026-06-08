@@ -1,4 +1,5 @@
 """Health check endpoint."""
+
 from fastapi import APIRouter, Request
 from sqlalchemy import text
 
@@ -21,6 +22,7 @@ async def health_check(request: Request):
     # eagendas cloud check
     try:
         from app.config import get_settings
+
         settings = get_settings()
         response = await request.app.state.http_client.get(
             f"{settings.eagendas_url}/schema/",

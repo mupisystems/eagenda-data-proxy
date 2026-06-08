@@ -21,9 +21,7 @@ class LocalAppointment(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    __table_args__ = (
-        Index("ix_local_appt_ext_status", "external_id", "status"),
-    )
+    __table_args__ = (Index("ix_local_appt_ext_status", "external_id", "status"),)
 
     def __repr__(self) -> str:
         return f"<LocalAppointment {self.appointment_key} ext={self.external_id} status={self.status}>"

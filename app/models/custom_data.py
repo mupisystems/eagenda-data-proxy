@@ -18,9 +18,7 @@ class LocalCustomData(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    __table_args__ = (
-        Index("ix_custom_data_entity", "entity_type", "entity_key", unique=True),
-    )
+    __table_args__ = (Index("ix_custom_data_entity", "entity_type", "entity_key", unique=True),)
 
     def __repr__(self) -> str:
         return f"<LocalCustomData {self.entity_type}:{self.entity_key}>"

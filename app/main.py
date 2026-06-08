@@ -70,6 +70,7 @@ def create_app() -> FastAPI:
     # Admin panel
     if settings.admin_enabled:
         from app.admin.setup import setup_admin
+
         sync_engine = create_sync_engine(settings.database_url_sync)
         setup_admin(app, sync_engine)
 

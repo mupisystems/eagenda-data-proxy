@@ -10,9 +10,11 @@ from pydantic_settings import BaseSettings
 
 def _substitute_env_vars(raw: str) -> str:
     """Replace ${VAR_NAME} patterns with environment variable values."""
+
     def replacer(match):
         var_name = match.group(1)
         return os.getenv(var_name, "")
+
     return re.sub(r"\$\{(\w+)}", replacer, raw)
 
 

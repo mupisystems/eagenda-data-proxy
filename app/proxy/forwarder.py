@@ -1,4 +1,5 @@
 """Generic HTTP request forwarding to eagendas cloud."""
+
 import logging
 
 import httpx

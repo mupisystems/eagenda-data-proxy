@@ -1,4 +1,5 @@
 """Audit cleanup and PII purge task — retention policy enforcement."""
+
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 def cleanup_expired_records():
     """Delete audit logs past retention and purge expired PII records."""
     import asyncio
+
     asyncio.run(_cleanup())
 
 
@@ -29,9 +31,7 @@ async def _cleanup():
     async with session_factory() as db:
         # Clean up old audit logs
         cutoff = datetime.now(timezone.utc) - timedelta(days=settings.audit_retention_days)
-        result = await db.execute(
-            delete(AuditLog).where(AuditLog.timestamp < cutoff)
-        )
+        result = await db.execute(delete(AuditLog).where(AuditLog.timestamp < cutoff))
         audit_deleted = result.rowcount
         if audit_deleted:
             logger.info("Deleted %d audit log entries older than %s", audit_deleted, cutoff.date())

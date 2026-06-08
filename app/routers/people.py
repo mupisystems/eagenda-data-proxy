@@ -1,4 +1,5 @@
 """People proxy router — intercepts PII on write, enriches on read."""
+
 import logging
 
 from fastapi import APIRouter, Body, Depends, Request
@@ -49,14 +50,19 @@ async def create_person(
     if cloud_resp.status_code in (200, 201):
         data = cloud_resp.json()
         from app.services.pii_store import PIIStore
+
         store = PIIStore()
         await store.update_person_key(db, pii.external_id, data.get("person_key"))
         enriched = await enricher.enrich_person(data, db)
         await audit.log(
-            db, action="CREATE", resource_type="person",
-            resource_id=data.get("person_key"), external_id=pii.external_id,
+            db,
+            action="CREATE",
+            resource_type="person",
+            resource_id=data.get("person_key"),
+            external_id=pii.external_id,
             client_ip=request.client.host if request.client else None,
-            request_method="POST", request_path="/api/v3/people/",
+            request_method="POST",
+            request_path="/api/v3/people/",
             pii_fields_accessed=list(body.keys()),
         )
         return JSONResponse(content=enriched, status_code=cloud_resp.status_code)
@@ -161,18 +167,25 @@ async def forget_person(
     # Best-effort: pseudonymize in eagendas cloud
     try:
         from app.services.pii_store import PIIStore
+
         store = PIIStore()
         await store.get_by_person_key(db, result.get("person_key", ""))
         # Person is already deleted locally, but we try to update cloud
-        await forwarder.forward("PATCH", f"/people/{external_id}/", body={
-            "name": "[ERASED]",
-            "email": "",
-            "phone": "",
-        })
+        await forwarder.forward(
+            "PATCH",
+            f"/people/{external_id}/",
+            body={
+                "name": "[ERASED]",
+                "email": "",
+                "phone": "",
+            },
+        )
     except Exception:
         logger.warning("Could not pseudonymize person %s in cloud (best-effort)", external_id)
 
-    return JSONResponse(content={
-        "status": "erased",
-        "summary": result,
-    })
+    return JSONResponse(
+        content={
+            "status": "erased",
+            "summary": result,
+        }
+    )

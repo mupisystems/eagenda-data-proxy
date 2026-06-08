@@ -1,4 +1,5 @@
 """Bearer token authentication for proxy clients."""
+
 import hashlib
 
 from fastapi import Depends, HTTPException, status

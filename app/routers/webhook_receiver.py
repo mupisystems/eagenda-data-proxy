@@ -1,4 +1,5 @@
 """Webhook receiver — eagendas cloud sends webhooks here, proxy enriches and relays."""
+
 import logging
 
 from fastapi import APIRouter, Body, Depends
@@ -50,6 +51,7 @@ async def receive_webhook(
     # Dispatch async tasks (imported here to avoid circular imports with celery)
     try:
         from app.tasks.webhook_relay import relay_webhook
+
         relay_webhook.delay(enriched, event)
     except Exception:
         logger.exception("Failed to dispatch webhook relay task")
@@ -57,6 +59,7 @@ async def receive_webhook(
     if event in ("CREATED", "UPDATED", "CANCELED", "DELETED") and resource_type == "appointment":
         try:
             from app.tasks.notifications import send_appointment_notification
+
             send_appointment_notification.delay(enriched)
         except Exception:
             logger.exception("Failed to dispatch notification task")
@@ -64,9 +67,7 @@ async def receive_webhook(
     return {"status": "accepted", "event": event}
 
 
-async def _update_appointment_status(
-    limiter: BookingLimiter, db: AsyncSession, body: dict, event: str
-) -> None:
+async def _update_appointment_status(limiter: BookingLimiter, db: AsyncSession, body: dict, event: str) -> None:
     """Update local_appointment status from webhook events."""
     appointment_key = body.get("appointment_key")
     if not appointment_key:

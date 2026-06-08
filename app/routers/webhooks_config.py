@@ -1,4 +1,5 @@
 """Webhooks configuration proxy router."""
+
 from fastapi import APIRouter, Body, Depends, Request
 from fastapi.responses import JSONResponse
 
@@ -6,9 +7,7 @@ from app.auth.bearer import verify_proxy_token
 from app.dependencies import get_forwarder
 from app.proxy.forwarder import CloudForwarder
 
-router = APIRouter(
-    prefix="/api/v3/webhooks", tags=["Webhooks"], dependencies=[Depends(verify_proxy_token)]
-)
+router = APIRouter(prefix="/api/v3/webhooks", tags=["Webhooks"], dependencies=[Depends(verify_proxy_token)])
 
 
 @router.get("/")

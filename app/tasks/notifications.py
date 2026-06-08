@@ -1,4 +1,5 @@
 """Notification tasks — send emails/SMS/WhatsApp using enriched PII data."""
+
 import asyncio
 import logging
 from datetime import datetime, timezone
@@ -64,51 +65,59 @@ async def _send_notification(payload: dict):
         if email and settings.email_enabled:
             success = await send_email(to=email, subject=subject, body_html=body_html)
             async with session_factory() as db:
-                db.add(NotificationLog(
-                    external_id=external_id,
-                    appointment_key=appointment_key,
-                    channel="email",
-                    recipient=email,
-                    subject=subject,
-                    status="sent" if success else "failed",
-                    sent_at=datetime.now(timezone.utc) if success else None,
-                ))
+                db.add(
+                    NotificationLog(
+                        external_id=external_id,
+                        appointment_key=appointment_key,
+                        channel="email",
+                        recipient=email,
+                        subject=subject,
+                        status="sent" if success else "failed",
+                        sent_at=datetime.now(timezone.utc) if success else None,
+                    )
+                )
                 await db.commit()
             logger.info("Email %s: to=%s event=%s", "sent" if success else "failed", email, event)
 
         # SMS (provider must be configured)
         if phone and settings.sms_enabled:
             from app.services.sms import send_sms
+
             sms_text = f"Your appointment at {calendar_name} for {start} has been {event.lower()}."
             success = await send_sms(to=phone, body=sms_text)
             async with session_factory() as db:
-                db.add(NotificationLog(
-                    external_id=external_id,
-                    appointment_key=appointment_key,
-                    channel="sms",
-                    recipient=phone,
-                    subject=None,
-                    status="sent" if success else "failed",
-                    sent_at=datetime.now(timezone.utc) if success else None,
-                ))
+                db.add(
+                    NotificationLog(
+                        external_id=external_id,
+                        appointment_key=appointment_key,
+                        channel="sms",
+                        recipient=phone,
+                        subject=None,
+                        status="sent" if success else "failed",
+                        sent_at=datetime.now(timezone.utc) if success else None,
+                    )
+                )
                 await db.commit()
             logger.info("SMS %s: to=%s event=%s", "sent" if success else "failed", phone, event)
 
         # WhatsApp (provider must be configured)
         if phone and settings.whatsapp_enabled:
             from app.services.whatsapp import send_whatsapp
+
             wa_text = f"Your appointment at {calendar_name} for {start} has been {event.lower()}."
             success = await send_whatsapp(to=phone, body=wa_text)
             async with session_factory() as db:
-                db.add(NotificationLog(
-                    external_id=external_id,
-                    appointment_key=appointment_key,
-                    channel="whatsapp",
-                    recipient=phone,
-                    subject=None,
-                    status="sent" if success else "failed",
-                    sent_at=datetime.now(timezone.utc) if success else None,
-                ))
+                db.add(
+                    NotificationLog(
+                        external_id=external_id,
+                        appointment_key=appointment_key,
+                        channel="whatsapp",
+                        recipient=phone,
+                        subject=None,
+                        status="sent" if success else "failed",
+                        sent_at=datetime.now(timezone.utc) if success else None,
+                    )
+                )
                 await db.commit()
             logger.info("WhatsApp %s: to=%s event=%s", "sent" if success else "failed", phone, event)
 

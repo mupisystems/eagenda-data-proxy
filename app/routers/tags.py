@@ -1,4 +1,5 @@
 """Tags proxy router — pass-through (no PII)."""
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 
@@ -6,9 +7,7 @@ from app.auth.bearer import verify_proxy_token
 from app.dependencies import get_forwarder
 from app.proxy.forwarder import CloudForwarder
 
-router = APIRouter(
-    prefix="/api/v3/tags", tags=["Tags"], dependencies=[Depends(verify_proxy_token)]
-)
+router = APIRouter(prefix="/api/v3/tags", tags=["Tags"], dependencies=[Depends(verify_proxy_token)])
 
 
 @router.get("/")

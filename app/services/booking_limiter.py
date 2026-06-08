@@ -1,4 +1,5 @@
 """Booking limit enforcement — controls appointment limits per client."""
+
 import json
 import logging
 from datetime import datetime, timedelta
@@ -214,15 +215,9 @@ class BookingLimiter:
         await db.flush()
         return appt
 
-    async def update_status(
-        self, db: AsyncSession, appointment_key: str, status: str
-    ) -> Optional[LocalAppointment]:
+    async def update_status(self, db: AsyncSession, appointment_key: str, status: str) -> Optional[LocalAppointment]:
         """Update the status of a local appointment record."""
-        result = await db.execute(
-            select(LocalAppointment).where(
-                LocalAppointment.appointment_key == appointment_key
-            )
-        )
+        result = await db.execute(select(LocalAppointment).where(LocalAppointment.appointment_key == appointment_key))
         appt = result.scalar_one_or_none()
         if appt:
             appt.status = status
@@ -231,9 +226,7 @@ class BookingLimiter:
 
     # -- Query helpers --
 
-    async def _count_future(
-        self, db: AsyncSession, external_id: str, now: datetime
-    ) -> int:
+    async def _count_future(self, db: AsyncSession, external_id: str, now: datetime) -> int:
         """Count scheduled appointments in the future."""
         result = await db.execute(
             select(func.count()).where(
@@ -244,9 +237,7 @@ class BookingLimiter:
         )
         return result.scalar_one()
 
-    async def _count_noshows(
-        self, db: AsyncSession, external_id: str, since: datetime
-    ) -> int:
+    async def _count_noshows(self, db: AsyncSession, external_id: str, since: datetime) -> int:
         """Count no-shows since a given date."""
         result = await db.execute(
             select(func.count()).where(
@@ -257,9 +248,7 @@ class BookingLimiter:
         )
         return result.scalar_one()
 
-    async def _last_noshow_at(
-        self, db: AsyncSession, external_id: str
-    ) -> Optional[datetime]:
+    async def _last_noshow_at(self, db: AsyncSession, external_id: str) -> Optional[datetime]:
         """Get the timestamp of the most recent no-show."""
         result = await db.execute(
             select(func.max(LocalAppointment.updated_at)).where(
@@ -269,9 +258,7 @@ class BookingLimiter:
         )
         return result.scalar_one()
 
-    async def _last_booking_at(
-        self, db: AsyncSession, external_id: str
-    ) -> Optional[datetime]:
+    async def _last_booking_at(self, db: AsyncSession, external_id: str) -> Optional[datetime]:
         """Get the creation timestamp of the most recent booking."""
         result = await db.execute(
             select(func.max(LocalAppointment.created_at)).where(

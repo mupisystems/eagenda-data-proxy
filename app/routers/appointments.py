@@ -1,4 +1,5 @@
 """Appointments proxy router — intercepts attendee PII and questionnaire answers."""
+
 import logging
 from datetime import datetime
 
@@ -7,7 +8,14 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.bearer import verify_proxy_token
-from app.dependencies import get_booking_limiter, get_custom_data_store, get_db, get_enricher, get_forwarder, get_interceptor
+from app.dependencies import (
+    get_booking_limiter,
+    get_custom_data_store,
+    get_db,
+    get_enricher,
+    get_forwarder,
+    get_interceptor,
+)
 from app.proxy.enricher import PIIEnricher
 from app.proxy.forwarder import CloudForwarder
 from app.proxy.interceptor import PIIInterceptor
@@ -16,9 +24,7 @@ from app.services.custom_data_store import CustomDataStore
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(
-    prefix="/api/v3/appointments", tags=["Appointments"], dependencies=[Depends(verify_proxy_token)]
-)
+router = APIRouter(prefix="/api/v3/appointments", tags=["Appointments"], dependencies=[Depends(verify_proxy_token)])
 
 
 @router.get("/")
