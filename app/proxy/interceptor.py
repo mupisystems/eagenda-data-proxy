@@ -69,18 +69,20 @@ class PIIInterceptor:
     async def intercept_appointment(self, body: dict, db: AsyncSession) -> dict:
         """
         Intercept an appointment creation payload.
-        Processes attendees (person PII) and questionnaire answers (text PII).
+        Strips/pseudonymizes each attendee's PII and stores it locally, then
+        handles questionnaire answers (text PII). Person data lives inside
+        ``attendees`` — matching the eagendas API shape.
         """
         cleaned = deepcopy(body)
 
-        # Intercept person data if present at top level
-        person_fields = {"name", "email", "phone", "identification_code", "identification_type"}
-        if any(f in cleaned for f in person_fields) and cleaned.get("external_id"):
-            person_body = {k: v for k, v in cleaned.items() if k in person_fields or k == "external_id"}
-            stripped, _ = await self.intercept_person(person_body, db)
-            for key in person_fields:
-                cleaned.pop(key, None)
-            cleaned.update(stripped)
+        # Intercept each attendee's PII (eagendas nests person data in attendees)
+        attendees = cleaned.get("attendees")
+        if attendees:
+            cleaned_attendees = []
+            for attendee in attendees:
+                stripped, _ = await self.intercept_person(attendee, db)
+                cleaned_attendees.append(stripped)
+            cleaned["attendees"] = cleaned_attendees
 
         # Intercept questionnaire_answers text fields
         answers = cleaned.get("questionnaire_answers", [])

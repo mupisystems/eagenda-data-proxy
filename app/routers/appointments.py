@@ -27,6 +27,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v3/appointments", tags=["Appointments"], dependencies=[Depends(verify_proxy_token)])
 
 
+def _primary_external_id(body: dict) -> str | None:
+    """Resolve the external_id used for booking limits and local tracking.
+
+    Person data lives inside ``attendees`` (eagendas shape); fall back to a
+    top-level ``external_id`` for flat payloads.
+    """
+    if body.get("external_id"):
+        return body["external_id"]
+    for attendee in body.get("attendees", []):
+        if attendee.get("external_id"):
+            return attendee["external_id"]
+    return None
+
+
 @router.get("/")
 async def list_appointments(
     request: Request,
@@ -52,7 +66,7 @@ async def create_appointment(
     custom_store: CustomDataStore = Depends(get_custom_data_store),
 ):
     """Create appointment — check limits, intercept attendee PII, forward, enrich."""
-    external_id = body.get("external_id")
+    external_id = _primary_external_id(body)
 
     # Enforce booking limits before processing
     if external_id:
@@ -74,6 +88,11 @@ async def create_appointment(
     custom_data = body.pop("custom_data", None)
 
     cleaned = await interceptor.intercept_appointment(body, db)
+
+    # The interceptor may have generated an external_id for an attendee that
+    # lacked one — re-resolve so local tracking uses the same key as the cloud.
+    external_id = _primary_external_id(cleaned) or external_id
+
     cloud_resp = await forwarder.forward("POST", "/appointments/", body=cleaned)
 
     if cloud_resp.status_code == 201:

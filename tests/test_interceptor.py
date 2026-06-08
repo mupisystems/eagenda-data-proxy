@@ -66,3 +66,46 @@ class TestInterceptPerson:
         assert "identification_type" not in cleaned
         assert pii.identification_code == "12345678900"
         assert pii.identification_type == "CPF"
+
+
+class TestInterceptAppointment:
+    async def test_strips_attendee_pii(self, interceptor, db_session):
+        body = {
+            "service_key": "srv-vistoria",
+            "attendees": [
+                {
+                    "name": "Maria Santos",
+                    "email": "maria@example.com",
+                    "phone": "+5511999997777",
+                    "external_id": "EXT-010",
+                }
+            ],
+        }
+        cleaned = await interceptor.intercept_appointment(body, db_session)
+
+        attendee = cleaned["attendees"][0]
+        assert attendee["name"] == "Citizen-EXT-010"
+        assert "email" not in attendee
+        assert "phone" not in attendee
+        assert attendee["external_id"] == "EXT-010"
+        assert cleaned["service_key"] == "srv-vistoria"
+
+    async def test_stores_each_attendee_locally(self, interceptor, db_session):
+        body = {
+            "attendees": [
+                {"name": "Maria Santos", "email": "maria@example.com", "external_id": "EXT-011"},
+                {"name": "João Silva", "email": "joao@example.com", "external_id": "EXT-012"},
+            ],
+        }
+        await interceptor.intercept_appointment(body, db_session)
+
+        maria = await interceptor.pii_store.get_person(db_session, "EXT-011")
+        joao = await interceptor.pii_store.get_person(db_session, "EXT-012")
+        assert maria.email == "maria@example.com"
+        assert joao.email == "joao@example.com"
+
+    async def test_generates_external_id_for_attendee_without_one(self, interceptor, db_session):
+        body = {"attendees": [{"name": "Anon"}]}
+        cleaned = await interceptor.intercept_appointment(body, db_session)
+
+        assert cleaned["attendees"][0]["external_id"] is not None

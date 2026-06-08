@@ -20,9 +20,15 @@ POST /api/v3/appointments/
 Content-Type: application/json
 
 {
-  "external_id": "ext-123",
   "service_key": "srv-vistoria",
   "date_time": "2026-06-10T14:00",
+  "attendees": [
+    {
+      "external_id": "ext-123",
+      "name": "Jane Doe",
+      "email": "jane@example.com"
+    }
+  ],
   "custom_data": {
     "plate": "ABC-1234",
     "color": "white",
@@ -32,10 +38,13 @@ Content-Type: application/json
 }
 ```
 
+Person data lives inside `attendees` (matching the eagendas API). The proxy strips each attendee's PII before forwarding and keys local records off the attendee's `external_id`.
+
 What happens:
 1. `custom_data` is removed from the payload
-2. The rest is forwarded to eagendas cloud (with PII interception as usual)
-3. After successful creation (201), `custom_data` is saved locally linked to the `appointment_key`
+2. Each attendee's PII is stripped/pseudonymized and stored locally
+3. The rest is forwarded to eagendas cloud
+4. After successful creation (201), `custom_data` is saved locally linked to the `appointment_key`
 
 ### On appointment retrieval
 
@@ -48,11 +57,15 @@ GET /api/v3/appointments/appt-001/
 ```json
 {
   "appointment_key": "appt-001",
-  "external_id": "ext-123",
   "service_key": "srv-vistoria",
   "date_time": "2026-06-10T14:00:00",
-  "name": "Jane Doe",
-  "email": "jane@example.com",
+  "attendees": [
+    {
+      "external_id": "ext-123",
+      "name": "Jane Doe",
+      "email": "jane@example.com"
+    }
+  ],
   "custom_data": {
     "plate": "ABC-1234",
     "color": "white",
@@ -141,8 +154,10 @@ PUT /api/v3/local-data/person/ext-123/
 ```http
 POST /api/v3/appointments/
 {
-  "external_id": "ext-123",
   "service_key": "srv-vistoria",
+  "attendees": [
+    { "external_id": "ext-123", "name": "Jane Doe" }
+  ],
   "custom_data": {
     "plate": "ABC-1234",
     "color": "white",
@@ -175,10 +190,10 @@ async def get_appointment_with_vehicle(appointment_key: str):
         )
         data = resp.json()
 
-        # data["name"]        -> from local PII store
-        # data["email"]       -> from local PII store
-        # data["custom_data"] -> from local custom data
-        # data["date_time"]   -> from eagendas cloud
+        # data["attendees"][0]["name"]  -> from local PII store
+        # data["attendees"][0]["email"] -> from local PII store
+        # data["custom_data"]           -> from local custom data
+        # data["date_time"]             -> from eagendas cloud
         return data
 
 
