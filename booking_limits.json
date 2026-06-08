@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "defaults": {
+    "max_future_appointments": 3,
+    "noshow_window_days": 90,
+    "cooldown_minutes": 0,
+    "noshow_penalties": [
+      { "from": 1, "block_days": 7 },
+      { "from": 2, "block_days": 14 },
+      { "from": 3, "block_days": 30 },
+      { "from": 5, "block_days": 90, "max_future_appointments": 1 }
+    ]
+  },
+  "rules": [],
+  "messages": {
+    "future_limit_reached": "Você já possui {count}/{max} agendamentos futuros. Cancele um existente antes de agendar novamente.",
+    "noshow_blocked": "Devido a {noshow_count} falta(s), novos agendamentos estão bloqueados até {unblock_date}.",
+    "cooldown_active": "Aguarde {minutes} minutos entre agendamentos."
+  }
+}

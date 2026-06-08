@@ -1,8 +1,8 @@
-"""Audit cleanup task — retention policy enforcement."""
+"""Audit cleanup and PII purge task — retention policy enforcement."""
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete
 
 from app.config import get_settings
 from app.tasks.celery_app import celery_app
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task
 def cleanup_expired_records():
-    """Delete audit logs past retention and PII records past purge_after."""
+    """Delete audit logs past retention and purge expired PII records."""
     import asyncio
     asyncio.run(_cleanup())
 
@@ -20,7 +20,7 @@ def cleanup_expired_records():
 async def _cleanup():
     from app.db.engine import create_engine, create_session_factory
     from app.models.audit_log import AuditLog
-    from app.models.pii_person import PIIPerson
+    from app.services.data_privacy import DataPrivacyService
 
     settings = get_settings()
     engine = create_engine(settings.database_url)
@@ -36,15 +36,10 @@ async def _cleanup():
         if audit_deleted:
             logger.info("Deleted %d audit log entries older than %s", audit_deleted, cutoff.date())
 
-        # Clean up PII past purge_after
-        today = datetime.now(timezone.utc).date()
-        result = await db.execute(
-            delete(PIIPerson).where(PIIPerson.purge_after <= today)
-        )
-        pii_deleted = result.rowcount
-        if pii_deleted:
-            logger.info("Purged %d PII records past retention date", pii_deleted)
-
         await db.commit()
+
+        # Purge expired PII with full cleanup of related records
+        privacy = DataPrivacyService()
+        await privacy.purge_expired(db)
 
     await engine.dispose()

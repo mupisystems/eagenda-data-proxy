@@ -1,8 +1,5 @@
 """Tests for Bearer token authentication."""
-import hashlib
 
-import pytest
-from app.models.proxy_token import ProxyToken
 
 
 class TestAuth:

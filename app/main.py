@@ -52,6 +52,7 @@ def create_app() -> FastAPI:
         tags,
         webhooks_config,
         webhook_receiver,
+        local_data,
         health,
     )
 
@@ -64,6 +65,7 @@ def create_app() -> FastAPI:
     app.include_router(tags.router)
     app.include_router(webhooks_config.router)
     app.include_router(webhook_receiver.router)
+    app.include_router(local_data.router)
 
     # Admin panel
     if settings.admin_enabled:

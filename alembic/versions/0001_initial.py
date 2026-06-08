@@ -1,9 +1,10 @@
-"""Initial tables
+"""Initial schema
 
 Revision ID: 0001
 Revises:
-Create Date: 2026-06-05
+Create Date: 2026-06-08
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -92,8 +93,45 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
 
+    # local_custom_data
+    op.create_table(
+        "local_custom_data",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("entity_type", sa.String(20), nullable=False),
+        sa.Column("entity_key", sa.String(255), nullable=False),
+        sa.Column("data", sa.JSON(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+    )
+    op.create_index(
+        "ix_custom_data_entity",
+        "local_custom_data",
+        ["entity_type", "entity_key"],
+        unique=True,
+    )
+
+    # local_appointment
+    op.create_table(
+        "local_appointment",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("appointment_key", sa.String(255), nullable=False, unique=True),
+        sa.Column("external_id", sa.String(255), nullable=False, index=True),
+        sa.Column("service_key", sa.String(255)),
+        sa.Column("scheduled_at", sa.DateTime(timezone=True)),
+        sa.Column("status", sa.String(20), server_default="scheduled"),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+    )
+    op.create_index(
+        "ix_local_appt_ext_status",
+        "local_appointment",
+        ["external_id", "status"],
+    )
+
 
 def downgrade() -> None:
+    op.drop_table("local_appointment")
+    op.drop_table("local_custom_data")
     op.drop_table("notification_log")
     op.drop_table("audit_log")
     op.drop_table("proxy_token")

@@ -9,6 +9,9 @@ from app.proxy.interceptor import PIIInterceptor
 from app.proxy.enricher import PIIEnricher
 from app.services.pii_store import PIIStore
 from app.services.audit import AuditService
+from app.services.booking_limiter import BookingLimiter
+from app.services.custom_data_store import CustomDataStore
+from app.services.data_privacy import DataPrivacyService
 
 
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -37,9 +40,24 @@ def get_interceptor(
     return PIIInterceptor(settings=settings, pii_store=pii_store)
 
 
-def get_enricher(pii_store: PIIStore = Depends(get_pii_store)) -> PIIEnricher:
-    return PIIEnricher(pii_store=pii_store)
+def get_custom_data_store() -> CustomDataStore:
+    return CustomDataStore()
+
+
+def get_enricher(
+    pii_store: PIIStore = Depends(get_pii_store),
+    custom_data_store: CustomDataStore = Depends(get_custom_data_store),
+) -> PIIEnricher:
+    return PIIEnricher(pii_store=pii_store, custom_data_store=custom_data_store)
 
 
 def get_audit() -> AuditService:
     return AuditService()
+
+
+def get_booking_limiter() -> BookingLimiter:
+    return BookingLimiter()
+
+
+def get_data_privacy() -> DataPrivacyService:
+    return DataPrivacyService()

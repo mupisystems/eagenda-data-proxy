@@ -1,13 +1,20 @@
 """Appointments proxy router — intercepts attendee PII and questionnaire answers."""
+import logging
+from datetime import datetime
+
 from fastapi import APIRouter, Body, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.bearer import verify_proxy_token
-from app.dependencies import get_db, get_enricher, get_forwarder, get_interceptor
+from app.dependencies import get_booking_limiter, get_custom_data_store, get_db, get_enricher, get_forwarder, get_interceptor
 from app.proxy.enricher import PIIEnricher
 from app.proxy.forwarder import CloudForwarder
 from app.proxy.interceptor import PIIInterceptor
+from app.services.booking_limiter import BookingLimitDenied, BookingLimiter
+from app.services.custom_data_store import CustomDataStore
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/v3/appointments", tags=["Appointments"], dependencies=[Depends(verify_proxy_token)]
@@ -35,13 +42,59 @@ async def create_appointment(
     forwarder: CloudForwarder = Depends(get_forwarder),
     interceptor: PIIInterceptor = Depends(get_interceptor),
     enricher: PIIEnricher = Depends(get_enricher),
+    limiter: BookingLimiter = Depends(get_booking_limiter),
+    custom_store: CustomDataStore = Depends(get_custom_data_store),
 ):
-    """Create appointment — intercept attendee PII and text answers, forward, enrich."""
+    """Create appointment — check limits, intercept attendee PII, forward, enrich."""
+    external_id = body.get("external_id")
+
+    # Enforce booking limits before processing
+    if external_id:
+        try:
+            await limiter.check(
+                db,
+                external_id=external_id,
+                service_key=body.get("service_key"),
+                tag=body.get("tag"),
+            )
+        except BookingLimitDenied as exc:
+            logger.info("Booking denied for %s: %s", external_id, exc.reason)
+            return JSONResponse(
+                content={"error": exc.reason, "message": exc.message, "details": exc.details},
+                status_code=429,
+            )
+
+    # Extract custom_data before forwarding (stored locally, never sent to cloud)
+    custom_data = body.pop("custom_data", None)
+
     cleaned = await interceptor.intercept_appointment(body, db)
     cloud_resp = await forwarder.forward("POST", "/appointments/", body=cleaned)
 
     if cloud_resp.status_code == 201:
-        enriched = await enricher.enrich_appointment(cloud_resp.json(), db)
+        cloud_data = cloud_resp.json()
+        appointment_key = cloud_data.get("appointment_key")
+
+        # Record appointment locally for limit tracking
+        if external_id and appointment_key:
+            scheduled_at = None
+            if body.get("date_time"):
+                try:
+                    scheduled_at = datetime.fromisoformat(body["date_time"])
+                except (ValueError, TypeError):
+                    pass
+            await limiter.record_appointment(
+                db,
+                appointment_key=appointment_key,
+                external_id=external_id,
+                service_key=body.get("service_key"),
+                scheduled_at=scheduled_at,
+            )
+
+        # Store custom data locally
+        if custom_data and appointment_key:
+            await custom_store.upsert(db, "appointment", appointment_key, custom_data)
+
+        enriched = await enricher.enrich_appointment(cloud_data, db)
         return JSONResponse(content=enriched, status_code=201)
 
     return JSONResponse(content=cloud_resp.json(), status_code=cloud_resp.status_code)

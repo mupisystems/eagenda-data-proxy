@@ -35,7 +35,7 @@ REGION_URLS = {
 
 class Settings(BaseSettings):
     # eagendas cloud
-    eagendas_region: str = "BR"
+    eagendas_region: str = "US"
     eagendas_base_url: str = ""
     eagendas_api_token: str = ""
     eagendas_timeout: int = 30
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
         """Resolve the effective API URL: explicit base_url takes precedence over region."""
         if self.eagendas_base_url:
             return self.eagendas_base_url
-        return REGION_URLS.get(self.eagendas_region.upper(), REGION_URLS["BR"])
+        return REGION_URLS.get(self.eagendas_region.upper(), REGION_URLS["US"])
 
     # Database
     database_url: str = "postgresql+asyncpg://proxy:proxy@localhost:5432/eagendas_pii"

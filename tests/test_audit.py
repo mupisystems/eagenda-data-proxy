@@ -1,8 +1,5 @@
 """Tests for audit logging."""
-import pytest
-from sqlalchemy import select
 
-from app.models.audit_log import AuditLog
 from app.services.audit import AuditService
 
 

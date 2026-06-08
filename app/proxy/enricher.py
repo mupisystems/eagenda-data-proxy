@@ -4,16 +4,18 @@ from copy import deepcopy
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.services.custom_data_store import CustomDataStore
 from app.services.pii_store import PIIStore
 
 logger = logging.getLogger(__name__)
 
 
 class PIIEnricher:
-    """Enriches eagendas cloud responses with local PII data."""
+    """Enriches eagendas cloud responses with local PII and custom data."""
 
-    def __init__(self, pii_store: PIIStore):
+    def __init__(self, pii_store: PIIStore, custom_data_store: CustomDataStore | None = None):
         self.pii_store = pii_store
+        self.custom_data_store = custom_data_store or CustomDataStore()
 
     async def enrich_person(self, data: dict, db: AsyncSession) -> dict:
         """Enrich a single person response with local PII."""
@@ -72,6 +74,12 @@ class PIIEnricher:
                     q_key = answer.get("question_key")
                     if q_key and q_key in answers_map:
                         answer["body"] = answers_map[q_key]
+
+        # Enrich with local custom data
+        if appointment_key:
+            custom = await self.custom_data_store.get(db, "appointment", appointment_key)
+            if custom:
+                enriched["custom_data"] = custom
 
         return enriched
 

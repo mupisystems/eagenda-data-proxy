@@ -1,14 +1,19 @@
 """People proxy router — intercepts PII on write, enriches on read."""
+import logging
+
 from fastapi import APIRouter, Body, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.bearer import verify_proxy_token
-from app.dependencies import get_db, get_enricher, get_forwarder, get_interceptor, get_audit
+from app.dependencies import get_data_privacy, get_db, get_enricher, get_forwarder, get_interceptor, get_audit
 from app.proxy.enricher import PIIEnricher
 from app.proxy.forwarder import CloudForwarder
 from app.proxy.interceptor import PIIInterceptor
 from app.services.audit import AuditService
+from app.services.data_privacy import DataPrivacyService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v3/people", tags=["People"], dependencies=[Depends(verify_proxy_token)])
 
@@ -108,3 +113,66 @@ async def partial_update_person(
         enriched = await enricher.enrich_person(cloud_resp.json(), db)
         return JSONResponse(content=enriched, status_code=200)
     return JSONResponse(content=cloud_resp.json(), status_code=cloud_resp.status_code)
+
+
+@router.get("/{external_id}/export/")
+async def export_person_data(
+    external_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    privacy: DataPrivacyService = Depends(get_data_privacy),
+):
+    """Data portability — export all data held about a person."""
+    data = await privacy.export_person_data(
+        db,
+        external_id=external_id,
+        client_ip=request.client.host if request.client else None,
+        request_path=f"/api/v3/people/{external_id}/export/",
+    )
+    if data is None:
+        return JSONResponse(content={"error": "not_found", "message": "Person not found."}, status_code=404)
+    return JSONResponse(content=data)
+
+
+@router.delete("/{external_id}/forget/")
+async def forget_person(
+    external_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    forwarder: CloudForwarder = Depends(get_forwarder),
+    privacy: DataPrivacyService = Depends(get_data_privacy),
+):
+    """
+    Right to erasure — delete all local PII for a person.
+
+    Also pseudonymizes the person in eagendas cloud by updating their
+    name to the redacted placeholder.
+    """
+    result = await privacy.forget_person(
+        db,
+        external_id=external_id,
+        client_ip=request.client.host if request.client else None,
+        request_path=f"/api/v3/people/{external_id}/forget/",
+    )
+
+    if not result["person_deleted"]:
+        return JSONResponse(content={"error": "not_found", "message": "Person not found."}, status_code=404)
+
+    # Best-effort: pseudonymize in eagendas cloud
+    try:
+        from app.services.pii_store import PIIStore
+        store = PIIStore()
+        await store.get_by_person_key(db, result.get("person_key", ""))
+        # Person is already deleted locally, but we try to update cloud
+        await forwarder.forward("PATCH", f"/people/{external_id}/", body={
+            "name": "[ERASED]",
+            "email": "",
+            "phone": "",
+        })
+    except Exception:
+        logger.warning("Could not pseudonymize person %s in cloud (best-effort)", external_id)
+
+    return JSONResponse(content={
+        "status": "erased",
+        "summary": result,
+    })
