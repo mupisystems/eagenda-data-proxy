@@ -20,8 +20,9 @@ POST /api/v3/appointments/
 Content-Type: application/json
 
 {
-  "service_key": "srv-vistoria",
-  "date_time": "2026-06-10T14:00",
+  "calendar_key": "b1c2d3e4-...",
+  "service_list": [{ "service_key": "f5a6b7c8-..." }],
+  "start": { "dateTime": "2026-06-10T14:00:00-03:00" },
   "attendees": [
     {
       "external_id": "ext-123",
@@ -38,7 +39,7 @@ Content-Type: application/json
 }
 ```
 
-Person data lives inside `attendees` (matching the eagendas API). The proxy strips each attendee's PII before forwarding and keys local records off the attendee's `external_id`.
+The payload follows the eagendas shape: person data lives inside `attendees`, the start time is `start.dateTime`, and services are listed in `service_list`. `custom_data` is a proxy-only extension — it is stripped before forwarding. The proxy strips each attendee's PII and keys local records off the attendee's `external_id`.
 
 What happens:
 1. `custom_data` is removed from the payload
@@ -57,10 +58,13 @@ GET /api/v3/appointments/appt-001/
 ```json
 {
   "appointment_key": "appt-001",
-  "service_key": "srv-vistoria",
-  "date_time": "2026-06-10T14:00:00",
+  "status": "PENDING",
+  "calendar": { "calendar_key": "b1c2d3e4-...", "calendar_name": "Vistoria" },
+  "service_list": [{ "service_key": "f5a6b7c8-...", "service_name": "Vistoria" }],
+  "start": { "dateTime": "2026-06-10T14:00:00-03:00", "timeZone": "America/Sao_Paulo" },
   "attendees": [
     {
+      "person_key": "a1b2c3d4-...",
       "external_id": "ext-123",
       "name": "Jane Doe",
       "email": "jane@example.com"
@@ -154,7 +158,9 @@ PUT /api/v3/local-data/person/ext-123/
 ```http
 POST /api/v3/appointments/
 {
-  "service_key": "srv-vistoria",
+  "calendar_key": "b1c2d3e4-...",
+  "service_list": [{ "service_key": "f5a6b7c8-..." }],
+  "start": { "dateTime": "2026-06-10T14:00:00-03:00" },
   "attendees": [
     { "external_id": "ext-123", "name": "Jane Doe" }
   ],

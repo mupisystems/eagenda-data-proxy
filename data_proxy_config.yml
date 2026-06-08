@@ -38,11 +38,10 @@ pii:
       - identification_type
       - date_of_birth
   questionnaire:
-    # Question types whose answers are classified as PII
+    # Question types whose answers are classified as PII (eagenda question types)
     pii_types:
       - text
       - short-text
-      - paragraph
     # Pseudonym for redacted text answers sent to cloud
     redacted_placeholder: "[REDACTED]"
 

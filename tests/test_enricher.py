@@ -65,6 +65,30 @@ class TestEnrichAppointment:
         enriched = await enricher.enrich_appointment(cloud_data, db_session)
         assert enriched["attendees"] == []
 
+    async def test_restores_redacted_questionnaire_answer(self, enricher, db_session):
+        await PIIStore().store_questionnaire_answer(
+            db_session,
+            appointment_key="appt-q",
+            question_key="q1",
+            question_text="Observações",
+            answer_body="Tenho alergia a penicilina",
+            pseudonymized_body="[REDACTED]:q1",
+        )
+        cloud_data = {
+            "appointment_key": "appt-q",
+            "questionnaires": [
+                {
+                    "type": "appointment_form",
+                    "answers": [
+                        {"order": 1, "question": "Observações", "answer_data_type": "text", "answer": "[REDACTED]:q1"},
+                    ],
+                }
+            ],
+        }
+        enriched = await enricher.enrich_appointment(cloud_data, db_session)
+
+        assert enriched["questionnaires"][0]["answers"][0]["answer"] == "Tenho alergia a penicilina"
+
 
 class TestEnrichPaginated:
     async def test_enriches_person_results(self, enricher, db_session, seed_pii):

@@ -15,12 +15,14 @@ from app.dependencies import (
     get_enricher,
     get_forwarder,
     get_interceptor,
+    get_questionnaire_processor,
 )
 from app.proxy.enricher import PIIEnricher
 from app.proxy.forwarder import CloudForwarder
 from app.proxy.interceptor import PIIInterceptor
 from app.services.booking_limiter import BookingLimitDenied, BookingLimiter
 from app.services.custom_data_store import CustomDataStore
+from app.services.questionnaire import QuestionnaireProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,30 @@ def _primary_external_id(body: dict) -> str | None:
         if attendee.get("external_id"):
             return attendee["external_id"]
     return None
+
+
+def _service_key(body: dict) -> str | None:
+    """First service_key from the eagendas `service_list` (flat fallback)."""
+    for service in body.get("service_list", []):
+        if service.get("service_key"):
+            return service["service_key"]
+    return body.get("service_key")
+
+
+def _tag_key(body: dict) -> str | None:
+    """First tag_key from the eagendas `tag_list` (flat fallback)."""
+    for tag in body.get("tag_list", []):
+        if tag.get("tag_key"):
+            return tag["tag_key"]
+    return body.get("tag")
+
+
+def _start_datetime(body: dict) -> str | None:
+    """Appointment start from the eagendas `start.dateTime` (flat fallback)."""
+    start = body.get("start")
+    if isinstance(start, dict) and start.get("dateTime"):
+        return start["dateTime"]
+    return body.get("date_time")
 
 
 @router.get("/")
@@ -64,9 +90,11 @@ async def create_appointment(
     enricher: PIIEnricher = Depends(get_enricher),
     limiter: BookingLimiter = Depends(get_booking_limiter),
     custom_store: CustomDataStore = Depends(get_custom_data_store),
+    questionnaire: QuestionnaireProcessor = Depends(get_questionnaire_processor),
 ):
-    """Create appointment — check limits, intercept attendee PII, forward, enrich."""
+    """Create appointment — check limits, intercept attendee + questionnaire PII, forward, enrich."""
     external_id = _primary_external_id(body)
+    service_key = _service_key(body)
 
     # Enforce booking limits before processing
     if external_id:
@@ -74,8 +102,8 @@ async def create_appointment(
             await limiter.check(
                 db,
                 external_id=external_id,
-                service_key=body.get("service_key"),
-                tag=body.get("tag"),
+                service_key=service_key,
+                tag=_tag_key(body),
             )
         except BookingLimitDenied as exc:
             logger.info("Booking denied for %s: %s", external_id, exc.reason)
@@ -86,6 +114,14 @@ async def create_appointment(
 
     # Extract custom_data before forwarding (stored locally, never sent to cloud)
     custom_data = body.pop("custom_data", None)
+
+    # Redact PII questionnaire answers before forwarding; store the originals after 201.
+    pending_answers = []
+    answers = body.get("questionnaire_answers")
+    if answers:
+        body["questionnaire_answers"], pending_answers = await questionnaire.redact_outbound(
+            body.get("calendar_key"), answers
+        )
 
     cleaned = await interceptor.intercept_appointment(body, db)
 
@@ -102,18 +138,23 @@ async def create_appointment(
         # Record appointment locally for limit tracking
         if external_id and appointment_key:
             scheduled_at = None
-            if body.get("date_time"):
+            start_dt = _start_datetime(body)
+            if start_dt:
                 try:
-                    scheduled_at = datetime.fromisoformat(body["date_time"])
+                    scheduled_at = datetime.fromisoformat(start_dt)
                 except (ValueError, TypeError):
                     pass
             await limiter.record_appointment(
                 db,
                 appointment_key=appointment_key,
                 external_id=external_id,
-                service_key=body.get("service_key"),
+                service_key=service_key,
                 scheduled_at=scheduled_at,
             )
+
+        # Store redacted questionnaire answers locally (now that we have the key)
+        if pending_answers and appointment_key:
+            await questionnaire.store(db, appointment_key, pending_answers)
 
         # Store custom data locally
         if custom_data and appointment_key:

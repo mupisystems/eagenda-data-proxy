@@ -18,8 +18,6 @@ class PIIInterceptor:
 
     def __init__(self, settings: Settings, pii_store: PIIStore):
         self.prefix = settings.pii_pseudonym_prefix
-        self.redacted = settings.pii_redacted_placeholder
-        self.pii_types = set(settings.pii_questionnaire_pii_types)
         self.pii_store = pii_store
 
     def _pseudonymize_name(self, external_id: str) -> str:
@@ -68,10 +66,11 @@ class PIIInterceptor:
 
     async def intercept_appointment(self, body: dict, db: AsyncSession) -> dict:
         """
-        Intercept an appointment creation payload.
-        Strips/pseudonymizes each attendee's PII and stores it locally, then
-        handles questionnaire answers (text PII). Person data lives inside
-        ``attendees`` — matching the eagendas API shape.
+        Intercept an appointment creation payload — strips/pseudonymizes each
+        attendee's PII and stores it locally. Person data lives inside
+        ``attendees``, matching the eagendas API shape. Questionnaire answers are
+        handled separately by ``QuestionnaireProcessor`` at the router level,
+        where the calendar's form (and thus question types) is available.
         """
         cleaned = deepcopy(body)
 
@@ -84,40 +83,4 @@ class PIIInterceptor:
                 cleaned_attendees.append(stripped)
             cleaned["attendees"] = cleaned_attendees
 
-        # Intercept questionnaire_answers text fields
-        answers = cleaned.get("questionnaire_answers", [])
-        if answers:
-            cleaned["questionnaire_answers"] = await self._intercept_answers(answers, db)
-
         return cleaned
-
-    async def _intercept_answers(self, answers: list[dict], db: AsyncSession) -> list[dict]:
-        """Strip PII from text-type questionnaire answers."""
-        cleaned_answers = []
-        for answer in answers:
-            cleaned = dict(answer)
-            # For now, we can't know the question type at interception time
-            # without querying the cloud. Store all answers locally as a safety measure
-            # and pass them through. The classification happens at the router level
-            # where we have access to form structure.
-            cleaned_answers.append(cleaned)
-        return cleaned_answers
-
-    async def intercept_questionnaire_answer(
-        self,
-        appointment_key: str,
-        question_key: str,
-        question_text: str,
-        answer_body: str,
-        db: AsyncSession,
-    ) -> str:
-        """Intercept a single PII questionnaire answer. Returns pseudonymized body."""
-        await self.pii_store.store_questionnaire_answer(
-            db,
-            appointment_key=appointment_key,
-            question_key=question_key,
-            question_text=question_text,
-            answer_body=answer_body,
-            pseudonymized_body=self.redacted,
-        )
-        return self.redacted

@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     # PII
     pii_pseudonym_prefix: str = "Citizen"
     pii_redacted_placeholder: str = "[REDACTED]"
-    pii_questionnaire_pii_types: list[str] = Field(default_factory=lambda: ["text", "short-text", "paragraph"])
+    pii_questionnaire_pii_types: list[str] = Field(default_factory=lambda: ["text", "short-text"])
 
     # Notifications
     email_enabled: bool = True

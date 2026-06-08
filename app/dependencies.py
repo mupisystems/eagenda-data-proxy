@@ -12,6 +12,7 @@ from app.services.audit import AuditService
 from app.services.booking_limiter import BookingLimiter
 from app.services.custom_data_store import CustomDataStore
 from app.services.data_privacy import DataPrivacyService
+from app.services.questionnaire import QuestionnaireProcessor
 
 
 async def get_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
@@ -42,6 +43,14 @@ def get_interceptor(
 
 def get_custom_data_store() -> CustomDataStore:
     return CustomDataStore()
+
+
+def get_questionnaire_processor(
+    settings: Settings = Depends(get_settings),
+    forwarder: CloudForwarder = Depends(get_forwarder),
+    pii_store: PIIStore = Depends(get_pii_store),
+) -> QuestionnaireProcessor:
+    return QuestionnaireProcessor(forwarder=forwarder, pii_store=pii_store, settings=settings)
 
 
 def get_enricher(

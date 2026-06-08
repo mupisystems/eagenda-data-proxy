@@ -126,3 +126,11 @@ class PIIStore:
         )
         answers = result.scalars().all()
         return {a.question_key: a.answer_body for a in answers}
+
+    async def get_questionnaire_tokens(self, db: AsyncSession, appointment_key: str) -> dict[str, str]:
+        """Map redaction token -> real answer body, for restoring cloud responses."""
+        result = await db.execute(
+            select(PIIQuestionnaireAnswer).where(PIIQuestionnaireAnswer.appointment_key == appointment_key)
+        )
+        answers = result.scalars().all()
+        return {a.pseudonymized_body: a.answer_body for a in answers}

@@ -65,16 +65,17 @@ class PIIEnricher:
                     if pii.identification_type:
                         attendee["identification_type"] = pii.identification_type
 
-        # Enrich questionnaire answers
+        # Enrich questionnaire answers — the cloud echoes back our redaction token
+        # in the `answer` field; restore the real value by matching that token.
         appointment_key = enriched.get("appointment_key")
         questionnaires = enriched.get("questionnaires", [])
         if appointment_key and questionnaires:
-            answers_map = await self.pii_store.get_questionnaire_answers(db, appointment_key)
+            token_map = await self.pii_store.get_questionnaire_tokens(db, appointment_key)
             for questionnaire in questionnaires:
                 for answer in questionnaire.get("answers", []):
-                    q_key = answer.get("question_key")
-                    if q_key and q_key in answers_map:
-                        answer["body"] = answers_map[q_key]
+                    value = answer.get("answer")
+                    if value in token_map:
+                        answer["answer"] = token_map[value]
 
         # Enrich with local custom data
         if appointment_key:
