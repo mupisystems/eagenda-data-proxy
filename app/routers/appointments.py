@@ -5,6 +5,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Body, Depends, Request
 from fastapi.responses import JSONResponse
+
+from app.schemas.appointment import AppointmentCreate
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.bearer import verify_proxy_token
@@ -83,7 +85,7 @@ async def list_appointments(
 
 @router.post("/")
 async def create_appointment(
-    body: dict = Body(...),
+    payload: AppointmentCreate,
     db: AsyncSession = Depends(get_db),
     forwarder: CloudForwarder = Depends(get_forwarder),
     interceptor: PIIInterceptor = Depends(get_interceptor),
@@ -93,6 +95,9 @@ async def create_appointment(
     questionnaire: QuestionnaireProcessor = Depends(get_questionnaire_processor),
 ):
     """Create appointment — check limits, intercept attendee + questionnaire PII, forward, enrich."""
+    # exclude_unset keeps the client's exact payload (incl. unmodeled fields) without
+    # injecting nulls for omitted optionals — preserving transparent forwarding.
+    body = payload.model_dump(exclude_unset=True)
     external_id = _primary_external_id(body)
     service_key = _service_key(body)
 

@@ -110,6 +110,7 @@ class LocalAppointmentAdmin(ModelView, model=LocalAppointment):
         LocalAppointment.service_key,
         LocalAppointment.scheduled_at,
         LocalAppointment.status,
+        LocalAppointment.created_at,
         LocalAppointment.updated_at,
     ]
     column_searchable_list = [LocalAppointment.appointment_key, LocalAppointment.external_id]
@@ -117,6 +118,7 @@ class LocalAppointmentAdmin(ModelView, model=LocalAppointment):
         LocalAppointment.id,
         LocalAppointment.scheduled_at,
         LocalAppointment.status,
+        LocalAppointment.created_at,
         LocalAppointment.updated_at,
     ]
 

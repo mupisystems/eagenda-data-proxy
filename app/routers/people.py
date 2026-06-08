@@ -13,6 +13,7 @@ from app.proxy.forwarder import CloudForwarder
 from app.proxy.interceptor import PIIInterceptor
 from app.services.audit import AuditService
 from app.services.data_privacy import DataPrivacyService
+from app.schemas.person import PersonCreate
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ async def list_people(
 @router.post("/")
 async def create_person(
     request: Request,
-    body: dict = Body(...),
+    payload: PersonCreate,
     db: AsyncSession = Depends(get_db),
     forwarder: CloudForwarder = Depends(get_forwarder),
     interceptor: PIIInterceptor = Depends(get_interceptor),
@@ -44,6 +45,7 @@ async def create_person(
     audit: AuditService = Depends(get_audit),
 ):
     """Create person — intercept PII, forward pseudonymized, enrich response."""
+    body = payload.model_dump(exclude_unset=True)
     cleaned, pii = await interceptor.intercept_person(body, db)
     cloud_resp = await forwarder.forward("POST", "/people/", body=cleaned)
 
