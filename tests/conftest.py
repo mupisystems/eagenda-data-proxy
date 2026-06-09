@@ -55,9 +55,12 @@ async def client(engine, db_session, proxy_token):
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-        headers={"Authorization": f"Bearer {proxy_token}"},
-    ) as ac:
-        yield ac
+    # Run the lifespan so app.state.http_client (used by the forwarder) is set.
+    # get_db is overridden, so the lazily-created app.state engine is never used.
+    async with app.router.lifespan_context(app):
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+            headers={"Authorization": f"Bearer {proxy_token}"},
+        ) as ac:
+            yield ac
