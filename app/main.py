@@ -23,6 +23,15 @@ async def lifespan(app: FastAPI):
     app.state.engine = create_engine(settings.database_url)
     app.state.session_factory = create_session_factory(app.state.engine)
 
+    # Dev-only: create the schema from the models (use Alembic in production).
+    if settings.db_auto_create:
+        from app.db.base import Base
+        from app import models as _models  # noqa: F401 — register all models on Base.metadata
+
+        async with app.state.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.warning("db_auto_create is ON — tables created from models (dev only)")
+
     logger.info("eagendas Data Proxy started — region: %s, cloud: %s", settings.eagendas_region, settings.eagendas_url)
 
     yield

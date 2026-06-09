@@ -16,3 +16,8 @@ venv/
 .mypy_cache/
 htmlcov/
 .coverage
+
+# VS Code — keep shared run configs, ignore personal settings
+.vscode/*
+!.vscode/launch.json
+!.vscode/extensions.json

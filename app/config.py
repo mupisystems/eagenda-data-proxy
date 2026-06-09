@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://proxy:proxy@localhost:5432/eagendas_pii"
     database_url_sync: str = "postgresql+psycopg2://proxy:proxy@localhost:5432/eagendas_pii"
+    # Dev convenience only: create tables from the models on startup (e.g. for a
+    # local SQLite run). Production must use Alembic migrations — keep this False.
+    db_auto_create: bool = False
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
